@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MRMI Clinical Calculator & Tracker</title>
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #f0fdfa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 1.5rem;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    h1 { font-size: 1.4rem; color: var(--primary); }
+    .subtitle { font-size: 0.9rem; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .meta-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--muted); }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .item-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+      background: #fcfcfc;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+    }
+    .item-title { font-weight: 700; font-size: 1rem; }
+    .item-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; }
+    .score-box {
+      background: var(--accent);
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    .score-big { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
+    .subscores {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+    }
+    .subscore-pill {
+      background: var(--card);
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: #f1f5f9; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+    th, td { border-bottom: 1px solid var(--border); padding: 0.6rem 0.4rem; text-align: left; }
+    th { color: var(--muted); font-weight: 600; }
+    svg { width: 100%; height: 210px; background: #fafafa; border: 1px solid var(--border); border-radius: 8px; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>Modified Rivermead Mobility Index (MRMI)</h1>
+      <p class="subtitle">Standardized 8-Item Clinical Mobility Assessment & Longitudinal Charting</p>
+    </div>
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn-outline" onclick="resetForm()">Reset Form</button>
+      <button class="btn-outline" onclick="copyClinicalNote()">Copy Clinical Note</button>
+      <button class="btn-primary" onclick="exportCSV()">Export CSV</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Left Column: Assessment Form -->
+    <div>
+      <div class="card">
+        <div class="meta-row">
+          <div>
+            <label for="patientId">Patient ID / Name</label>
+            <input type="text" id="patientId" placeholder="e.g., PT-1042">
+          </div>
+          <div>
+            <label for="assessDate">Assessment Date</label>
+            <input type="date" id="assessDate">
+          </div>
+          <div>
+            <label for="assessor">Clinician / Rater</label>
+            <input type="text" id="assessor" placeholder="e.g., J. Doe, PT">
+          </div>
+        </div>
+        <div>
+          <label for="notes">Clinical Notes / Walking Aid Used</label>
+          <input type="text" id="notes" placeholder="e.g., Quadripod stick indoors, supervision on stairs">
+        </div>
+      </div>
+
+      <div class="card" id="itemsContainer"></div>
+    </div>
+
+    <!-- Right Column: Live Score, Chart & History -->
+    <div>
+      <div class="score-box">
+        <div style="font-size:0.85rem; font-weight:600; text-transform:uppercase; color:var(--muted);">Total MRMI Score</div>
+        <div class="score-big"><span id="totalScore">40</span> <span style="font-size:1.2rem; font-weight:400;">/ 40</span></div>
+        <div id="interpBadge" style="font-size:0.9rem; font-weight:600; margin-top:0.25rem;">High Functional Mobility</div>
+
+        <div class="subscores">
+          <div class="subscore-pill"><strong>Bed Mobility</strong><br><span id="subBed">15</span> / 15</div>
+          <div class="subscore-pill"><strong>Transfers/Stand</strong><br><span id="subTrans">15</span> / 15</div>
+          <div class="subscore-pill"><strong>Ambulation</strong><br><span id="subAmb">10</span> / 10</div>
+        </div>
+
+        <div class="btn-row" style="justify-content:center; margin-top:1.2rem;">
+          <button class="btn-primary" style="width:100%;" onclick="saveAssessment()">Save Assessment to Chart</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:1rem; margin-bottom:0.3rem;">Longitudinal Mobility Trajectory</h3>
+        <p style="font-size:0.8rem; color:var(--muted);">Tracks saved scores over time (MDC₉₅ = 4.5 points)</p>
+        <svg id="trendChart" viewBox="0 0 400 200"></svg>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:1rem;">Saved Assessments</h3>
+          <button class="btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="clearHistory()">Clear All</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Score</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const MRMI_ITEMS = [
+    { id: 1, title: "1. Turning over", desc: "Please turn over from your back to your weakest side.", cat: "bed" },
+    { id: 2, title: "2. Lying to sitting", desc: "Please sit up on the side of the bed.", cat: "bed" },
+    { id: 3, title: "3. Balanced sitting", desc: "Please sit on the edge of the bed for 10 seconds.", cat: "bed" },
+    { id: 4, title: "4. Sitting to standing", desc: "Please stand up from your chair in less than 15 seconds.", cat: "trans" },
+    { id: 5, title: "5. Standing", desc: "Please remain standing for 10 seconds.", cat: "trans" },
+    { id: 6, title: "6. Transfer", desc: "Please go from your bed to the chair and back again (towards unaffected side).", cat: "trans" },
+    { id: 7, title: "7. Walking indoors", desc: "Please walk for 10 meters in your usual way.", cat: "amb" },
+    { id: 8, title: "8. Stairs", desc: "Please climb up and go down one flight of stairs as you usually do.", cat: "amb" }
+  ];
+
+  const SCORE_LEVELS = [
+    { val: 0, label: "0 - Unable to perform" },
+    { val: 1, label: "1 - Assistance of 2 people" },
+    { val: 2, label: "2 - Assistance of 1 person" },
+    { val: 3, label: "3 - Requires supervision or verbal instruction" },
+    { val: 4, label: "4 - Requires an aid or appliance" },
+    { val: 5, label: "5 - Independent" }
+  ];
+
+  const STORAGE_KEY = "mrmi_records_v1";
+
+  function init() {
+    document.getElementById("assessDate").valueAsDate = new Date();
+    const container = document.getElementById("itemsContainer");
+    container.innerHTML = MRMI_ITEMS.map(item => `
+      <div class="item-card">
+        <div class="item-header">
+          <span class="item-title">${item.title}</span>
+        </div>
+        <div class="item-desc">${item.desc}</div>
+        <select id="item_${item.id}" onchange="calculateScore()">
+          ${SCORE_LEVELS.map(s => `<option value="${s.val}" ${s.val === 5 ? 'selected' : ''}>${s.label}</option>`).join('')}
+        </select>
+      </div>
+    `).join('');
+    calculateScore();
+    renderHistory();
+  }
+
+  function getScores() {
+    const scores = {};
+    let total = 0, bed = 0, trans = 0, amb = 0;
+    MRMI_ITEMS.forEach(item => {
+      const v = parseInt(document.getElementById(`item_${item.id}`).value, 10);
+      scores[item.id] = v;
+      total += v;
+      if (item.cat === "bed") bed += v;
+      if (item.cat === "trans") trans += v;
+      if (item.cat === "amb") amb += v;
+    });
+    return { scores, total, bed, trans, amb };
+  }
+
+  function calculateScore() {
+    const { total, bed, trans, amb } = getScores();
+    document.getElementById("totalScore").textContent = total;
+    document.getElementById("subBed").textContent = bed;
+    document.getElementById("subTrans").textContent = trans;
+    document.getElementById("subAmb").textContent = amb;
+
+    const badge = document.getElementById("interpBadge");
+    if (total <= 15) {
+      badge.textContent = "Severe Mobility Dependence (0–15)";
+      badge.style.color = "#b91c1c";
+    } else if (total <= 30) {
+      badge.textContent = "Moderate Assisted Mobility (16–30)";
+      badge.style.color = "#b45309";
+    } else {
+      badge.textContent = "High Functional Mobility / Near Independent (31–40)";
+      badge.style.color = "#0f766e";
+    }
+  }
+
+  function getHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveAssessment() {
+    const { scores, total, bed, trans, amb } = getScores();
+    const record = {
+      id: Date.now(),
+      patient: document.getElementById("patientId").value.trim() || "Anonymous",
+      date: document.getElementById("assessDate").value || new Date().toISOString().slice(0, 10),
+      assessor: document.getElementById("assessor").value.trim(),
+      notes: document.getElementById("notes").value.trim(),
+      total, bed, trans, amb, scores
+    };
+    const records = getHistory();
+    records.push(record);
+    records.sort((a, b) => a.date.localeCompare(b.date));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    renderHistory();
+  }
+
+  function deleteRecord(id) {
+    const updated = getHistory().filter(r => r.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    renderHistory();
+  }
+
+  function clearHistory() {
+    if (confirm("Delete all saved MRMI assessments?")) {
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+    }
+  }
+
+  function renderHistory() {
+    const records = getHistory();
+    const tbody = document.getElementById("historyBody");
+    if (!records.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">No records saved yet</td></tr>`;
+    } else {
+      tbody.innerHTML = records.map(r => `
+        <tr>
+          <td>${r.date}</td>
+          <td>${r.patient}</td>
+          <td><strong>${r.total}/40</strong></td>
+          <td>${r.notes || "-"}</td>
+          <td><button class="btn-outline" style="padding:0.2rem 0.4rem;font-size:0.75rem;" onclick="deleteRecord(${r.id})">×</button></td>
+        </tr>
+      `).join('');
+    }
+    renderChart(records);
+  }
+
+  function renderChart(records) {
+    const svg = document.getElementById("trendChart");
+    const padL = 35, padR = 20, padT = 20, padB = 30;
+    const W = 400, H = 200;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    let html = "";
+    [0, 10, 20, 30, 40].forEach(val => {
+      const y = padT + plotH - (val / 40) * plotH;
+      html += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="3,3"/>`;
+      html += `<text x="${padL - 6}" y="${y + 4}" font-size="10" fill="#64748b" text-anchor="end">${val}</text>`;
+    });
+
+    if (!records.length) {
+      html += `<text x="${W / 2}" y="${H / 2}" font-size="12" fill="#94a3b8" text-anchor="middle">Save an assessment to plot progression</text>`;
+      svg.innerHTML = html;
+      return;
+    }
+
+    const pts = records.map((r, i) => {
+      const x = records.length === 1 ? padL + plotW / 2 : padL + (i / (records.length - 1)) * plotW;
+      const y = padT + plotH - (r.total / 40) * plotH;
+      return { x, y, r };
+    });
+
+    if (pts.length > 1) {
+      const poly = pts.map(p => `${p.x},${p.y}`).join(" ");
+      html += `<polyline fill="none" stroke="#0f766e" stroke-width="2.5" points="${poly}"/>`;
+    }
+
+    pts.forEach(p => {
+      html += `<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#0f766e"/>`;
+      html += `<text x="${p.x}" y="${p.y - 8}" font-size="10" font-weight="bold" fill="#0f766e" text-anchor="middle">${p.r.total}</text>`;
+      html += `<text x="${p.x}" y="${H - 8}" font-size="9" fill="#64748b" text-anchor="middle">${p.r.date.slice(5)}</text>`;
+    });
+
+    svg.innerHTML = html;
+  }
+
+  function resetForm() {
+    MRMI_ITEMS.forEach(item => document.getElementById(`item_${item.id}`).value = 5);
+    document.getElementById("notes").value = "";
+    calculateScore();
+  }
+
+  function copyClinicalNote() {
+    const { scores, total, bed, trans, amb } = getScores();
+    const patient = document.getElementById("patientId").value || "N/A";
+    const date = document.getElementById("assessDate").value || "N/A";
+    const notes = document.getElementById("notes").value || "None";
+    const lines = [
+      `MODIFIED RIVERMEAD MOBILITY INDEX (MRMI)`,
+      `Patient: ${patient} | Date: ${date}`,
+      `Total Score: ${total}/40 (Bed: ${bed}/15, Transfers: ${trans}/15, Ambulation: ${amb}/10)`,
+      ...MRMI_ITEMS.map(i => `- ${i.title}: ${scores[i.id]}/5`),
+      `Notes: ${notes}`
+    ];
+    navigator.clipboard.writeText(lines.join("\n")).then(() => alert("Clinical summary copied to clipboard!"));
+  }
+
+  function exportCSV() {
+    const records = getHistory();
+    if (!records.length) return alert("No saved records to export.");
+    const headers = ["Date", "Patient", "Assessor", "Total_40", "Bed_15", "Transfers_15", "Ambulation_10", ...MRMI_ITEMS.map(i => `Item_${i.id}`), "Notes"];
+    const rows = records.map(r => [
+      r.date,
+      `"${r.patient.replace(/"/g, '""')}"`,
+      `"${(r.assessor || '').replace(/"/g, '""')}"`,
+      r.total, r.bed, r.trans, r.amb,
+      ...MRMI_ITEMS.map(i => r.scores[i.id]),
+      `"${(r.notes || '').replace(/"/g, '""')}"`
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `MRMI_Export_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+
+  init();
+</script>
+</body>
+</html>
